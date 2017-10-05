@@ -1,7 +1,8 @@
-import path from 'path';
-import webpack from 'webpack';
-import FriendlyErrorsWebpackPlugin from 'friendly-errors-webpack-plugin';
-import WebpackNotifierPlugin from 'webpack-notifier';
+const fs = require('fs');
+const path = require('path');
+const webpack = require('webpack');
+const FriendlyErrorsWebpackPlugin = require('friendly-errors-webpack-plugin');
+const WebpackNotifierPlugin = require('webpack-notifier');
 
 const distPath = path.resolve(__dirname, 'dist');
 
@@ -16,11 +17,18 @@ const plugins = [
     new webpack.NamedModulesPlugin()
 ];
 
+const externals = fs.readdirSync('node_modules')
+    .filter(x => ['.bin'].indexOf(x) === -1)
+    .reduce((accumulator, mod) => ({
+        [mod]: 'commonjs ' + mod
+    }), {});
+
 export default {
     context: path.resolve(__dirname, 'src'),
     entry: {
         main: path.join(__dirname, "src", "index.js")
     },
+    externals,
     resolve: {
         modules: [path.resolve(__dirname, 'js'), 'node_modules'],
         extensions: ['*', '.js'],
@@ -28,16 +36,16 @@ export default {
             Scripts: path.resolve(__dirname, 'src/'),
         }
     },
-    devtool: env === 'dev' ? 'eval-source-map' : 'source-map',
     module: {
         loaders: [
             {
-                test: /\.jsx?$/,
-                exclude: /(node_modules|bower_components)/,
+                test: /\.js$/,
+                exclude: /node_modules/,
                 loader: 'babel-loader'
             }
         ]
     },
+    target: 'node',
     plugins,
     output: {
         path: distPath,
